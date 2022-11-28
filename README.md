@@ -26,7 +26,7 @@ Then, include `hrpc/client.h` and `hrpc/server.h` as you wish.
 static constexpr int ADD = 0x1;
 
 int main(int argc, char *argv[]) {
-    rpc::server srv(8080);
+    hrpc::server srv(8080);
     srv.bind(ADD, [](int a, int b) {
         return a + b;
     });
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 static constexpr int ADD = 0x1;
 
 int main() {
-    rpc::client client("127.0.0.1", 8080);
+    hrpc::client client("127.0.0.1", 8080);
     auto result = client.call<int>(ADD, 2, 3);
     std::cout << "2 + 3 = " << result << std::endl;
     return 0;
