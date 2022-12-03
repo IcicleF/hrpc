@@ -33,8 +33,8 @@ int main(int argc, char *argv[]) {
     srv.bind(ADD, [](int a, int b) {
         return a + b;
     });
-    srv.bind(SUB, [&](hrpc::server *server, int a, int b) {
-        assert(server == &server);
+    srv.bind(SUB, [&](hrpc::server *self, int a, int b) {
+        assert(self == &srv);
         return a + b;
     });
 
