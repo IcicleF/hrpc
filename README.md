@@ -5,7 +5,7 @@ A very-simple C++-native header-only RPC library **greatly inspired** by [rpclib
 * Based on C++20 and asio
 * Use 64-bit integers as RPC identifiers
 * Accept only [trivial types](https://en.cppreference.com/w/cpp/language/classes#Trivial_class)
-* RPC handlers can tell server to stop
+* RPC handlers can acquire a handle to RPC server
 
 ## Prerequisites
 
@@ -22,13 +22,19 @@ Then, include `hrpc/client.h` and `hrpc/server.h` as you wish.
 
 ```cpp
 #include <iostream>
+#include <cassert>
 #include "hrpc/server.h"
 
 static constexpr int ADD = 0x1;
+static constexpr int SUB = 0x2;
 
 int main(int argc, char *argv[]) {
     hrpc::server srv(8080);
     srv.bind(ADD, [](int a, int b) {
+        return a + b;
+    });
+    srv.bind(SUB, [&](hrpc::server *server, int a, int b) {
+        assert(server == &server);
         return a + b;
     });
 
@@ -44,11 +50,17 @@ int main(int argc, char *argv[]) {
 #include "hrpc/client.h"
 
 static constexpr int ADD = 0x1;
+static constexpr int SUB = 0x2;
 
 int main() {
     hrpc::client client("127.0.0.1", 8080);
+
     auto result = client.call<int>(ADD, 2, 3);
     std::cout << "2 + 3 = " << result << std::endl;
+
+    result = client.call<int>(SUB, 10, 7);
+    std::cout << "10 - 7 = " << result << std::endl;
+    
     return 0;
 }
 ```
