@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     });
     srv.bind(SUB, [&](hrpc::server *self, int a, int b) {
         assert(self == &srv);
-        return a + b;
+        return a - b;
     });
 
     srv.run();
