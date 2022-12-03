@@ -5,6 +5,7 @@ A very-simple C++-native header-only RPC library **greatly inspired** by [rpclib
 * Based on C++20 and asio
 * Use 64-bit integers as RPC identifiers
 * Accept only [trivial types](https://en.cppreference.com/w/cpp/language/classes#Trivial_class)
+* RPC handlers can tell server to stop
 
 ## Prerequisites
 

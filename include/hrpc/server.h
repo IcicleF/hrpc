@@ -18,6 +18,7 @@
 #include "common.h"
 #include "detail/call.h"
 #include "detail/func_traits.h"
+#include "detail/remove_first_arg.h"
 #include "detail/serdes.h"
 
 namespace hrpc {
@@ -48,6 +49,7 @@ public:
             io_ctx.run_one();
         }
     }
+
     void run() { run(dtor_should_stop); }
 
 protected:
@@ -136,13 +138,30 @@ protected:
     void bind(hrpc_id_t id, F func, detail::tags::void_result const &,
               detail::tags::nonzero_arg const &) {
         using args_type = typename detail::func_traits<F>::args_type;
-        handlers[id] = {sizeof(args_type), 1,
-                        [func](uint8_t const *req_buf, uint8_t *resp_buf) {
-                            args_type req_args =
-                                detail::deserialize<args_type>(req_buf);
-                            detail::call(func, req_args);
-                            resp_buf[0] = 0;
-                        }};
+        if constexpr (std::is_same_v<
+                          typename std::tuple_element<0, args_type>::type,
+                          server *>) {
+            using real_args_type =
+                typename detail::remove_first_arg<args_type>::type;
+            handlers[id] = {
+                sizeof(args_type), 1,
+                [this, func](uint8_t const *req_buf, uint8_t *resp_buf) {
+                    auto req_args =
+                        detail::deserialize<real_args_type>(req_buf);
+                    auto req_args_with_self =
+                        std::tuple_cat(std::make_tuple(this), req_args);
+                    detail::call(func, req_args_with_self);
+                    resp_buf[0] = 0;
+                }};
+        } else {
+            handlers[id] = {sizeof(args_type), 1,
+                            [func](uint8_t const *req_buf, uint8_t *resp_buf) {
+                                args_type req_args =
+                                    detail::deserialize<args_type>(req_buf);
+                                detail::call(func, req_args);
+                                resp_buf[0] = 0;
+                            }};
+        }
     }
 
     template <typename F>
@@ -166,13 +185,31 @@ protected:
         using result_type = typename detail::func_traits<F>::result_type;
         static_assert(std::is_trivial_v<result_type>,
                       "handler return type must be trivial");
-        handlers[id] = {sizeof(args_type), sizeof(result_type),
-                        [func](uint8_t const *req_buf, uint8_t *resp_buf) {
-                            args_type req_args =
-                                detail::deserialize<args_type>(req_buf);
-                            result_type resp = detail::call(func, req_args);
-                            *reinterpret_cast<result_type *>(resp_buf) = resp;
-                        }};
+
+        if constexpr (std::is_same_v<std::tuple_element_t<0, args_type>,
+                                     server *>) {
+            using real_args_type =
+                typename detail::remove_first_arg<args_type>::type;
+            handlers[id] = {
+                sizeof(args_type), sizeof(result_type),
+                [this, func](uint8_t const *req_buf, uint8_t *resp_buf) {
+                    auto req_args =
+                        detail::deserialize<real_args_type>(req_buf);
+                    auto req_args_with_self =
+                        std::tuple_cat(std::make_tuple(this), req_args);
+                    result_type resp = detail::call(func, req_args_with_self);
+                    *reinterpret_cast<result_type *>(resp_buf) = resp;
+                }};
+        } else {
+            handlers[id] = {sizeof(args_type), sizeof(result_type),
+                            [func](uint8_t const *req_buf, uint8_t *resp_buf) {
+                                args_type req_args =
+                                    detail::deserialize<args_type>(req_buf);
+                                result_type resp = detail::call(func, req_args);
+                                *reinterpret_cast<result_type *>(resp_buf) =
+                                    resp;
+                            }};
+        }
     }
 
     uint16_t port;
