@@ -9,7 +9,7 @@ A very-simple C++-native header-only RPC library **greatly inspired** by [rpclib
 ## Caveats
 
 * Accept only [trivial types](https://en.cppreference.com/w/cpp/language/classes#Trivial_class)
-* Servers & clients must be homogeneous: hrpc is not equipped with a comprehensive (de)serialization library, and it only packs RPC args/return values into structs. Different endianness, address width, etc. can cause a disaster.
+* Servers & clients must be homogeneous: hrpc is not equipped with a full-featured (de)serialization library, and it only packs RPC args/return values into structs. Different endianness, address width, etc. can cause a disaster.
 
 ## Prerequisites
 
