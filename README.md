@@ -4,8 +4,12 @@ A very-simple C++-native header-only RPC library **greatly inspired** by [rpclib
 
 * Based on C++20 and asio
 * Use 64-bit integers as RPC identifiers
-* Accept only [trivial types](https://en.cppreference.com/w/cpp/language/classes#Trivial_class)
 * RPC handlers can acquire a handle to RPC server
+
+## Caveats
+
+* Accept only [trivial types](https://en.cppreference.com/w/cpp/language/classes#Trivial_class)
+* Servers & clients must be homogeneous: hrpc is not equipped with a comprehensive (de)serialization library, and it only packs RPC args/return values into structs. Different endianness, address width, etc. can cause a disaster.
 
 ## Prerequisites
 
