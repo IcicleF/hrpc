@@ -25,9 +25,14 @@ namespace hrpc {
 
 class server {
 public:
-    server(uint16_t port)
-        : port(port), acceptor(io_ctx), dtor_should_stop(false) {}
-    ~server() { dtor_should_stop = true; }
+    server(uint16_t port) : port(port), acceptor(io_ctx), should_stop(false) {}
+    ~server() {
+        should_stop = true;
+
+        asio::error_code err;
+        acceptor.close(err);
+        io_ctx.stop();
+    }
 
     template <typename F> void bind(hrpc_id_t id, F func) {
         if (handlers.find(id) != handlers.end()) {
@@ -38,19 +43,23 @@ public:
              typename detail::func_kind_info<F>::args_kind{});
     }
 
-    void run(std::atomic<bool> &should_stop) {
+    void run() {
+        if (should_stop) {
+            throw std::logic_error("server already stopped, cannot restart");
+        }
+
         asio::ip::tcp::endpoint ep = {asio::ip::tcp::v4(), port};
         acceptor.open(ep.protocol());
         acceptor.set_option(asio::ip::tcp::acceptor::reuse_address(true));
         acceptor.bind(ep);
         acceptor.listen();
         start_accept();
-        while (!should_stop && !dtor_should_stop) {
+        while (!should_stop) {
             io_ctx.run_one();
         }
     }
 
-    void run() { run(dtor_should_stop); }
+    void stop() { should_stop = true; }
 
 protected:
     void start_accept() {
@@ -215,7 +224,7 @@ protected:
     uint16_t port;
     asio::io_service io_ctx;
     asio::ip::tcp::acceptor acceptor;
-    std::atomic<bool> dtor_should_stop;
+    std::atomic<bool> should_stop;
 
     struct identified_connection {
         asio::ip::tcp::socket socket;

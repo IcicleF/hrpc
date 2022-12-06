@@ -30,14 +30,11 @@
 //
 namespace hrpc::detail {
 
-template <typename T> using invoke = typename T::type;
-
 template <int N>
-using is_zero =
-    invoke<std::conditional<(N == 0), std::true_type, std::false_type>>;
+using is_zero = std::conditional_t<(N == 0), std::true_type, std::false_type>;
 
 template <int N, typename... Ts>
-using nth_type = invoke<std::tuple_element<N, std::tuple<Ts...>>>;
+using nth_type = std::tuple_element_t<N, std::tuple<Ts...>>;
 
 namespace tags {
 
@@ -91,8 +88,8 @@ template <typename R, typename... Args> struct func_kind_info<R (*)(Args...)> {
 template <typename F> using is_zero_arg = is_zero<func_traits<F>::arg_count>;
 
 template <typename F>
-using is_single_arg = invoke<std::conditional<func_traits<F>::arg_count == 1,
-                                              std::true_type, std::false_type>>;
+using is_single_arg = std::conditional_t<func_traits<F>::arg_count::value == 1,
+                                         std::true_type, std::false_type>;
 
 template <typename F>
 using is_void_result = std::is_void<typename func_traits<F>::result_type>;
